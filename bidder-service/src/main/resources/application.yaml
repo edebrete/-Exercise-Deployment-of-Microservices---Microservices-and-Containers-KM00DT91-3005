@@ -1,0 +1,22 @@
+server:
+  port: 8081
+
+spring:
+  application:
+    name: bidder-service
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: bidder-${random.uuid}
+      auto-offset-reset: earliest
+
+  datasource:
+    url: jdbc:postgresql.Driver://bidder-db:5432/bidder
+    username: postgres
+    password: pass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
