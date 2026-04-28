@@ -1,0 +1,96 @@
+services:
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_BROKER_ID: 1
+    command: >
+      bash -c "
+        /etc/confluent/docker/run &
+        sleep 10 &&
+        kafka-topics --create --if-not-exists --topic products-for-sale --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1 &&
+        kafka-topics --create --if-not-exists --topic bids --bootstrap-server kafka:9092 --partitions 1 --replication-factor 1 &&
+        sleep infinity
+      "
+      
+  seller-db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: seller
+
+  bidder-db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: bidder
+
+  auction-db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: pass
+      POSTGRES_DB: auction
+
+  seller-service:
+    image: seller-service
+    depends_on:
+      - kafka
+      - seller-db
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://seller-db:5432/seller
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: pass
+
+  bidder-service:
+    image: bidder-service
+    depends_on:
+      - kafka
+      - bidder-db
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://bidder-db:5432/bidder
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: pass
+    deploy:
+      replicas: 5
+
+  auction-manager-service:
+    image: auction-manager-service
+    depends_on:
+      - kafka
+      - auction-db
+    ports:
+      - "8082:8082"
+    environment:
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
+      SPRING_DATASOURCE_URL: jdbc:postgresql://auction-db:5432/auction
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: pass
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+
+  kafdrop:
+    image: obsidiandynamics/kafdrop
+    ports:
+      - "9000:9000"
+    environment:
+      KAFKA_BROKERCONNECT: kafka:9092
+    depends_on:
+      - kafka
