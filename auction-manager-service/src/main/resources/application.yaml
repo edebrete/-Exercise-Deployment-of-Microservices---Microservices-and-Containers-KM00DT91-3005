@@ -1,0 +1,22 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: auction-manager-service
+
+  kafka:
+    bootstrap-servers: kafka:9092
+    consumer:
+      group-id: auction-manager
+      auto-offset-reset: earliest
+
+  datasource:
+    url: jdbc:postgresql.Driver://auction-db:5432//auction
+    username: postgres
+    password: pass
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
