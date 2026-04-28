@@ -1,0 +1,7 @@
+com\example\seller_service\ProductForSaleEvent.class
+com\example\seller_service\ProductRepository.class
+com\example\seller_service\Product.class
+com\example\seller_service\SellerServiceApplication.class
+com\example\seller_service\SellerController.class
+com\example\seller_service\KafkaConfig.class
+com\example\seller_service\SellerService.class
